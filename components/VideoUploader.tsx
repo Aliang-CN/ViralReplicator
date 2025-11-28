@@ -7,8 +7,11 @@ interface VideoUploaderProps {
   disabled?: boolean;
 }
 
-const MAX_SIZE_MB = 18; // Gemini inline limit is ~20MB, keeping it safe
+// Increased limit to support File API uploads
+const MAX_SIZE_MB = 200; 
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+// Threshold for inline base64 usage (10MB)
+const INLINE_THRESHOLD_BYTES = 10 * 1024 * 1024;
 
 export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, disabled }) => {
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -16,24 +19,38 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onFileSelect, disa
     if (!file) return;
 
     if (file.size > MAX_SIZE_BYTES) {
-      alert(`File size too large. Please upload a video smaller than ${MAX_SIZE_MB}MB for this demo.`);
+      alert(`File size too large. Please upload a video smaller than ${MAX_SIZE_MB}MB.`);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      // Extract base64 part
-      const base64Data = result.split(',')[1];
-      
-      onFileSelect({
-        file,
-        previewUrl: URL.createObjectURL(file),
-        base64Data: base64Data,
-        mimeType: file.type
-      });
-    };
-    reader.readAsDataURL(file);
+    // Create a preview URL immediately
+    const previewUrl = URL.createObjectURL(file);
+    
+    // Only generate base64 for small files to avoid memory issues
+    if (file.size < INLINE_THRESHOLD_BYTES) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target?.result as string;
+            const base64Data = result.split(',')[1];
+            
+            onFileSelect({
+                file,
+                previewUrl,
+                base64Data,
+                mimeType: file.type
+            });
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // For large files, skip base64 generation
+        onFileSelect({
+            file,
+            previewUrl,
+            base64Data: undefined, // Explicitly undefined
+            mimeType: file.type
+        });
+    }
+
   }, [onFileSelect]);
 
   return (

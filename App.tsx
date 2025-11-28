@@ -17,11 +17,8 @@ const App: React.FC = () => {
     setState(AppState.ANALYZING);
 
     try {
-      if (!video.base64Data) {
-        throw new Error("Failed to process video file.");
-      }
-      
-      const result = await analyzeVideoScript(video.base64Data, video.mimeType);
+      // We now pass the file object directly. The service handles base64 conversion or file upload.
+      const result = await analyzeVideoScript(video.file);
       setAnalysisResult(result);
       setState(AppState.SUCCESS);
     } catch (err: any) {
@@ -86,7 +83,11 @@ const App: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white">Analyzing Video Structure...</h3>
-                <p className="text-gray-400 mt-2">Gemini is decomposing scenes, identifying camera angles,<br/> and crafting generative prompts.</p>
+                <p className="text-gray-400 mt-2">
+                  {currentVideo && currentVideo.file.size > 10 * 1024 * 1024 
+                    ? "Uploading large video to Gemini & Processing..."
+                    : "Gemini is decomposing scenes & identifying camera angles..."}
+                </p>
               </div>
             </div>
           )}

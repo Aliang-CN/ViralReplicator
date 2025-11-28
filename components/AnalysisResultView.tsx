@@ -367,8 +367,25 @@ const SceneCard: React.FC<{
         setGeneratedVideoUrl(videoUrl);
         onVideoSuccess(videoUrl);
     } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Failed to generate video");
+        console.error("Veo Generation Error:", err);
+        
+        let errorMsg = err.message || "Failed to generate video";
+        
+        // Enhanced Error Parsing for better user experience
+        if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("resource exhausted")) {
+            errorMsg = "⚠️ Quota Exceeded: Video generation limit reached. Please try again later.";
+        } else if (errorMsg.toLowerCase().includes("safety") || errorMsg.toLowerCase().includes("blocked")) {
+            errorMsg = "🛡️ Safety Violation: The prompt was flagged by safety filters. Please try modifying the visual description.";
+        } else if (errorMsg.includes("400") || errorMsg.toLowerCase().includes("invalid argument")) {
+            errorMsg = "⚠️ Invalid Request: The prompt or image format might be unsupported.";
+        } else if (errorMsg.includes("403")) {
+             errorMsg = "🔒 Permission Denied: Ensure your API key has access to Veo models.";
+        } else if (errorMsg.includes("Veo generation failed:")) {
+            // Strip the prefix added by the service layer
+            errorMsg = errorMsg.replace("Veo generation failed:", "").trim();
+        }
+
+        setError(errorMsg);
     } finally {
         clearInterval(interval);
         setIsGenerating(false);
