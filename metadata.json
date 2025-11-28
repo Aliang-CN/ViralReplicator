@@ -1,0 +1,5 @@
+{
+  "name": "ViralReplicator AI",
+  "description": "Reverse engineer viral videos into storyboard scripts and AI generation prompts using Gemini 2.5 Flash.",
+  "requestFramePermissions": []
+}
